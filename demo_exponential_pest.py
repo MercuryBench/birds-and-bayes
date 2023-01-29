@@ -47,17 +47,6 @@ def log_gen_poisson2(k, N_max):
   return np.concatenate(([element0], k * np.log(ks*delta) - ks*delta - np.sum(np.log(np.arange(1,k)))))
   #return (ks*delta)**k * np.exp(-ks*delta)/factorial(k)
 
-def resample(xs, weights, N=None):
-  # we assume number of parameters is first dimension
-  if N is None:
-    N = xs.shape[0]
-  weights_cumul = np.cumsum(weights)/np.sum(weights)
-  alpha = np.random.uniform(size=N)
-  indices = np.searchsorted(weights_cumul, alpha)
-  if xs.ndim > 1:
-    return xs[indices,...]
-  else:
-    return xs[indices]
 
 #%%
 # =========================================
