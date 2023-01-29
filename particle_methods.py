@@ -10,6 +10,15 @@ import matplotlib.pyplot as plt
 from math import exp, log
 from scipy.special import factorial
 
+
+def pushfwd(particles, f_fwd):
+    J = particles.shape[0]
+    if particles.ndim == 1:
+        return np.array([f_fwd(p) for p in particles])
+    else:
+        return np.stack([f_fwd(particles[i,...]) for i in range(J)])
+    
+
 def weights_from_like(particles, like_fnc):
     # assume first dimension is number of particles
     J = particles.shape[0]
@@ -20,6 +29,7 @@ def weights_from_like(particles, like_fnc):
         wt = np.array([like_fnc(particles[j, ...]) for j in range(J)])
         wt /= np.sum(wt, axis=0)
     return wt
+
 
 def resample(particles, weights, N=None):
   # we assume number of parameters is first dimension
