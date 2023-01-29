@@ -55,7 +55,7 @@ def rejuvenate(particles, cov=None):
         particles += np.random.normal(0, sqrt(cov), J)
     else:
         if cov is None:
-            cov = np.cov(particles, rowvar = False)*0.005
+            cov = np.cov(particles, rowvar = False)*0.05
         particles += np.random.multivariate_normal(np.zeros(particles.shape[1]), cov, J)
     
     
