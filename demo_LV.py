@@ -10,11 +10,12 @@ import matplotlib.pyplot as plt
 from math import exp, log, copysign
 from scipy.special import factorial
 from particle_methods import *
+np.random.seed(3)
 
 def f_step(ns_old, alphas, betas, h):
-  n1 = ns_old[0] + copysign(1, alphas[0]*(1-ns_old[0]/5000.0)) * np.random.binomial(ns_old[0], h*abs(alphas[0]*(1-ns_old[0]/5000.0)))  + copysign(1, betas[0]) * np.random.binomial(ns_old[0]*ns_old[1], h*abs(betas[0]))
-  n2 = ns_old[1] + copysign(1, alphas[1]*(1-ns_old[1]/5000.0)) * np.random.binomial(ns_old[1], h*abs(alphas[1]*(1-ns_old[1]/5000.0)))  + copysign(1, betas[1]) * np.random.binomial(ns_old[0]*ns_old[1], h*abs(betas[1]))
-  return np.array([n1,n2])
+  n1 = ns_old[0] + copysign(1, alphas[0]*(1-ns_old[0]/5000.0)) * np.random.binomial(ns_old[0], np.minimum(h*abs(alphas[0]*(1-ns_old[0]/5000.0)),1))  + copysign(1, betas[0]) * np.random.binomial(ns_old[0]*ns_old[1], h*abs(betas[0]))
+  n2 = ns_old[1] + copysign(1, alphas[1]*(1-ns_old[1]/5000.0)) * np.random.binomial(ns_old[1], np.minimum(h*abs(alphas[1]*(1-ns_old[1]/5000.0)),1))  + copysign(1, betas[1]) * np.random.binomial(ns_old[0]*ns_old[1], h*abs(betas[1]))
+  return np.minimum(np.maximum(np.array([n1,n2]), 0),5000)
 
 def f_step_cont(ns_old, alphas, betas, h):
   n1 = ns_old[0] + h*(alphas[0]*ns_old[0]*(1-ns_old[0]/5000) + betas[0]*ns_old[0]*ns_old[1])
@@ -34,13 +35,17 @@ def like_obs(obs, n, delta):
 # example data
 # =========================================
 
+
+
+
 alphas = np.array([20.0, -30])
 betas = np.array([-0.2, 0.1])
 
 
 n0 = np.array([200,50])
 delta = 0.1
-N_time = 500
+N_time = 500 # 1600
+delta_obs = 30 # 80
 h = 0.001
 
 ns = np.zeros((2, N_time))
@@ -54,7 +59,7 @@ for m in range(N_time-1):
   #obs[m+1] = f_obs(ns[m+1], delta)
 
 
-ind_obs = np.arange(2, N_time, 10, dtype=int)
+ind_obs = np.arange(2, N_time, delta_obs, dtype=int)
 Nobs = len(ind_obs)
 obs = np.zeros((2,Nobs))
 
@@ -84,8 +89,8 @@ fig.tight_layout();
 # start inference
 # =========================================
 
-N_part = 500
-particles = np.zeros((N_part, 6, N_time)) # order of variables: x1, x2, a1, a2, beta1, beta2
+N_part = 1000
+particles = np.zeros((N_part, 6, Nobs)) # order of variables: x1, x2, a1, a2, beta1, beta2
 particles0 = np.zeros((N_part, 6))
 particles0[:,0] =  np.random.randint(0,1000,N_part)
 particles0[:,1] =  np.random.randint(0,1000,N_part)
@@ -96,10 +101,8 @@ particles0[:,5] =  np.random.uniform(-.5,.5,N_part)
 
 
 
-show_iteration_at = np.linspace(0, Nobs, num=10, dtype=int)
-show_iteration_at = [0]
+show_iteration_at = np.arange(0, Nobs, 10)
 
-ind_obs = np.array([ind_obs[0]])
 
 for m, m_obs in enumerate(ind_obs):
     if m in show_iteration_at:
@@ -132,10 +135,10 @@ for m, m_obs in enumerate(ind_obs):
     
     if flag_plt:
         plt.figure(figsize=(10,10))
-        plt.suptitle(f"iteration = {m}")
+        plt.suptitle(f"iteration = {m_obs}")
         plt.subplot(3,3,1)
         plt.scatter(particles_now[:, 0], particles_now[:, 1], s=5)
-        plt.plot(ns[0,m], ns[1, m], 'r.', label="true value", markersize=15)
+        plt.plot(ns[0,m_obs], ns[1, m_obs], 'r.', label="true value", markersize=15)
         plt.legend()
         plt.title("prior")
         plt.ylim([0,1000])
@@ -154,7 +157,7 @@ for m, m_obs in enumerate(ind_obs):
     if flag_plt:
         plt.subplot(3,3,4)
         plt.scatter(particles_now[:,0], particles_now[:,1], s=5*wt/np.max(wt));
-        plt.plot(ns[0,m], ns[1, m], 'r.', label="true value", markersize=15)
+        plt.plot(ns[0,m_obs], ns[1, m_obs], 'r.', label="true value", markersize=15)
         plt.legend()
         plt.ylim([0,1000])
         plt.xlim([0,1000])
@@ -165,7 +168,7 @@ for m, m_obs in enumerate(ind_obs):
     if flag_plt:
         plt.subplot(3,3,5)
         plt.scatter(particles_now[:,0], particles_now[:,1], s=5, label="particles")
-        plt.plot(ns[0,m], ns[1, m], 'r.', label="true value", markersize=15)
+        plt.plot(ns[0,m_obs], ns[1, m_obs], 'r.', label="true value", markersize=15)
         plt.legend()
         plt.ylim([0,1000])
         plt.xlim([0,1000])
@@ -177,7 +180,7 @@ for m, m_obs in enumerate(ind_obs):
     if flag_plt:
         plt.subplot(3,3,6)
         plt.scatter(particles_now[:,0], particles_now[:,1], s=5, label="particles")
-        plt.plot(ns[0,m], ns[1, m], 'r.', label="true value", markersize=15)
+        plt.plot(ns[0,m_obs], ns[1, m_obs], 'r.', label="true value", markersize=15)
         plt.legend()
         plt.title("rejuvenated")
         plt.ylim([0,1000])
@@ -190,4 +193,27 @@ for m, m_obs in enumerate(ind_obs):
         ax3.boxplot(particles_now[:,4:])
         ax3.plot(np.array([1,2]), betas)
     
-    # particles[:,:,m] = particles_now
+    particles[:,:,m] = particles_now
+    
+w_box = 0.5*(ind_obs[2]-ind_obs[1])
+fig, (ax0, ax1) = plt.subplots(2,1, figsize=(10,5))
+ax0.boxplot(particles[:,0,0:len(ind_obs)], positions=ind_obs, widths = w_box, sym=".");
+ax0.plot(ns[0, :], label="population")
+ax1.boxplot(particles[:,1,0:len(ind_obs)], positions=ind_obs, widths = w_box, sym=".");
+ax1.plot(ns[1, :], label="population")
+plt.legend()
+plt.tight_layout()
+
+fig, ((ax0,ax1),(ax2,ax3)) = plt.subplots(2,2,figsize=(10,5))
+ax0.boxplot(particles[:,2,0:len(ind_obs)], positions=ind_obs, widths = w_box, sym=".");
+ax0.hlines(alphas[0], 1, ind_obs[-1], color="blue", label="true param")
+ax1.boxplot(particles[:,3,0:len(ind_obs)], positions=ind_obs, widths = w_box, sym=".");
+ax1.hlines(alphas[1], 1, ind_obs[-1], color="blue", label="true param")
+ax2.boxplot(particles[:,4,0:len(ind_obs)], positions=ind_obs, widths = w_box, sym=".");
+ax2.hlines(betas[0], 1, ind_obs[-1], color="blue", label="true param")
+ax3.boxplot(particles[:,5,0:len(ind_obs)], positions=ind_obs, widths = w_box, sym=".");
+ax3.hlines(betas[1], 1, ind_obs[-1], color="blue", label="true param")
+plt.legend()
+plt.tight_layout()
+
+       
